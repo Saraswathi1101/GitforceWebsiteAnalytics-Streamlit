@@ -9,7 +9,7 @@ from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 import re
 import json
-from requirements import *
+
 # Set page config to make sidebar narrower
 st.set_page_config(
     page_title="Gitforce Analytics",
