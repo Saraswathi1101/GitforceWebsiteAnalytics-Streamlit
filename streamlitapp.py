@@ -8,7 +8,8 @@ import plotly.graph_objects as go
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 import re
-
+import json
+from requirements import *
 # Set page config to make sidebar narrower
 st.set_page_config(
     page_title="Gitforce Analytics",
@@ -33,18 +34,63 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
+
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
 ]
-creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
-client = gspread.authorize(creds)
 
-workbook = client.open("Clarity Data")
-worksheet = workbook.worksheet("Downloaded data")
-data = worksheet.get_all_records()
-df = pd.DataFrame(data)
+# Updated credentials handling for both local and cloud deployment
+def get_google_credentials():
+    try:
+        # Try to load from Streamlit secrets (for cloud deployment)
+        if hasattr(st, 'secrets') and 'gcp_service_account' in st.secrets:
+            credentials_dict = {
+                "type": st.secrets["gcp_service_account"]["type"],
+                "project_id": st.secrets["gcp_service_account"]["project_id"],
+                "private_key_id": st.secrets["gcp_service_account"]["private_key_id"],
+                "private_key": st.secrets["gcp_service_account"]["private_key"],
+                "client_email": st.secrets["gcp_service_account"]["client_email"],
+                "client_id": st.secrets["gcp_service_account"]["client_id"],
+                "auth_uri": st.secrets["gcp_service_account"]["auth_uri"],
+                "token_uri": st.secrets["gcp_service_account"]["token_uri"],
+                "auth_provider_x509_cert_url": st.secrets["gcp_service_account"]["auth_provider_x509_cert_url"],
+                "client_x509_cert_url": st.secrets["gcp_service_account"]["client_x509_cert_url"]
+            }
+            return Credentials.from_service_account_info(credentials_dict, scopes=scope)
+        else:
+            # Fallback to local file (for local development)
+            return Credentials.from_service_account_file("credentials.json", scopes=scope)
+    except Exception as e:
+        st.error(f"Error loading credentials: {str(e)}")
+        st.stop()
+
+# Get credentials and authorize client
+try:
+    creds = get_google_credentials()
+    client = gspread.authorize(creds)
+    
+    # Load data with error handling
+    workbook = client.open("Clarity Data")
+    worksheet = workbook.worksheet("Downloaded data")
+    data = worksheet.get_all_records()
+    df = pd.DataFrame(data)
+    
+    if df.empty:
+        st.error("No data found in the Google Sheet.")
+        st.stop()
+        
+except Exception as e:
+    st.error(f"Error connecting to Google Sheets: {str(e)}")
+    st.error("Please check your credentials and sheet permissions.")
+    st.stop()
+
+# workbook = client.open("Clarity Data")
+# worksheet = workbook.worksheet("Downloaded data")
+# data = worksheet.get_all_records()
+# df = pd.DataFrame(data)
 
 df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors='coerce')
 df = df[df["Date"].notnull()]
