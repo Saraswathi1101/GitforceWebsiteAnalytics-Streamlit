@@ -574,20 +574,20 @@ if not df.empty:
                 st.plotly_chart(fig_referrers, use_container_width=True)
 
                 # Also show as a table for better visibility
-                st.markdown("**Referrer Breakdown Table:**")
-                st.dataframe(
-                    referrer_sessions,
-                    use_container_width=True,
-                    hide_index=True,
-                    column_config={
-                        "Referrer": st.column_config.TextColumn("Referrer", width="large"),
-                        "Sessions": st.column_config.NumberColumn("Sessions", format="%d")
-                    }
-                )
-            else:
-                st.info("No referrer data available.")
-        else:
-            st.info("No data available for the selected filters.")
+        #         st.markdown("**Referrer Breakdown Table:**")
+        #         st.dataframe(
+        #             referrer_sessions,
+        #             use_container_width=True,
+        #             hide_index=True,
+        #             column_config={
+        #                 "Referrer": st.column_config.TextColumn("Referrer", width="large"),
+        #                 "Sessions": st.column_config.NumberColumn("Sessions", format="%d")
+        #             }
+        #         )
+        #     else:
+        #         st.info("No referrer data available.")
+        # else:
+        #     st.info("No data available for the selected filters.")
 
     # PAGE 2: USER INSIGHTS
     elif page == "User Insights":
