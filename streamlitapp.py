@@ -103,23 +103,39 @@ if not df.empty:
 
         # Clean up referrer URLs (extract domain from full URLs)
         def clean_referrer(referrer):
-            if referrer == "Direct" or pd.isna(referrer) or referrer in ['nan', 'None', 'null', '']:
+        """Clean and standardize referrer data"""
+        # Convert to string first
+        referrer_str = str(referrer).strip()
+        
+        # Handle various representations of empty/null values
+        if (referrer_str in ['', 'nan', 'None', 'null', 'NaN'] or 
+            pd.isna(referrer) or 
+            referrer is None or 
+            referrer_str.lower() == 'none'):
+            return "Direct"
+        
+        # If it's a full URL, extract the domain
+        if referrer_str.startswith(('http://', 'https://')):
+            try:
+                parsed = urlparse(referrer_str)
+                domain = parsed.netloc.lower()
+                # Remove www. prefix for cleaner display
+                if domain.startswith('www.'):
+                    domain = domain[4:]
+                return domain if domain else "Direct"
+            except:
                 return "Direct"
+        
+        # If it's already a clean domain or other referrer type, return as is
+        return referrer_str
 
-            # Extract domain from URL if it's a full URL
-            if referrer.startswith(('http://', 'https://')):
-                try:
-                    parsed = urlparse(referrer)
-                    domain = parsed.netloc
-                    # Remove www. prefix for cleaner display
-                    if domain.startswith('www.'):
-                        domain = domain[4:]
-                    return domain
-                except:
-                    return referrer
-            return referrer
-
+    # Apply the cleaning func
+    if "Referrer" not in df.columns:
+        df["Referrer"] = "Direct"
+    else:
         df["Referrer"] = df["Referrer"].apply(clean_referrer)
+
+        
 
     # Handle Page count column
     if 'Page count' not in df.columns:
@@ -127,10 +143,10 @@ if not df.empty:
         df['Page count'] = 1
 
     # Handle Clicks column (if it exists)
-    if 'Clicks' not in df.columns:
-        df['Clicks'] = 0
+    if 'Session clicks' not in df.columns:
+        df['Session clicks'] = 0
     else:
-        df['Clicks'] = df['Clicks'].fillna(0)
+        df['Session clicks'] = df['Session clicks'].fillna(0)
 
     def duration_to_seconds(duration_str):
         if pd.isna(duration_str) or duration_str == "":
@@ -541,37 +557,78 @@ if not df.empty:
         # Row 3: Top Referrers (IMPROVED VERSION)
         st.markdown("### Top Referrers by Sessions")
         if len(filtered_df) > 0:
+            # Get referrer session counts
             referrer_sessions = filtered_df['Referrer'].value_counts().reset_index()
             referrer_sessions.columns = ['Referrer', 'Sessions']
+            
+            # Sort by sessions in descending order to get top referrers
+            referrer_sessions = referrer_sessions.sort_values('Sessions', ascending=False)
 
-            # Show all referrers if there are few, otherwise top 10
-            max_referrers = min(10, len(referrer_sessions))
+            # Show top 15 referrers (or all if fewer than 15)
+            max_referrers = min(15, len(referrer_sessions))
             top_referrers = referrer_sessions.head(max_referrers)
 
-            # Only create chart if there are referrers to show
             if len(top_referrers) > 0:
-                # Create horizontal bar chart
+                # Create horizontal bar chart (sorted ascending for better visual display)
+                chart_data = top_referrers.sort_values('Sessions', ascending=True)
+                
                 fig_referrers = px.bar(
-                    top_referrers.sort_values('Sessions', ascending=True),  # Sort ascending for horizontal bar
+                    chart_data,
                     x='Sessions',
                     y='Referrer',
                     orientation='h',
                     color='Sessions',
-                    color_continuous_scale='Blues',
-                    text='Sessions'
+                    color_continuous_scale='viridis',
+                    text='Sessions',
+                    title=f'Top {len(top_referrers)} Referrers by Session Count'
                 )
 
-                fig_referrers.update_traces(textposition='outside')
+                # Update layout for better readability
+                fig_referrers.update_traces(
+                    textposition='outside',
+                    texttemplate='%{text}',
+                    hovertemplate='<b>%{y}</b><br>Sessions: %{x}<extra></extra>'
+                )
+                
                 fig_referrers.update_layout(
-                    height=max(400, len(top_referrers) * 40),  # Dynamic height based on number of referrers
+                    height=max(500, len(top_referrers) * 35),  # Dynamic height
                     showlegend=False,
                     xaxis_title="Number of Sessions",
-                    yaxis_title="Referrer",
+                    yaxis_title="Referrer Source",
                     coloraxis_showscale=False,
-                    margin=dict(l=200, r=50, t=50, b=50)  # Increased left margin for longer referrer names
+                    margin=dict(l=200, r=100, t=80, b=50),  # Adjusted margins
+                    font=dict(size=12),
+                    title_x=0.5,  # Center the title
+                    yaxis=dict(
+                        tickmode='linear',
+                        automargin=True
+                    )
                 )
 
                 st.plotly_chart(fig_referrers, use_container_width=True)
+
+                # Also show detailed table
+                st.markdown("**Detailed Referrer Breakdown:**")
+                
+                # Add percentage column for better insights
+                total_sessions = referrer_sessions['Sessions'].sum()
+                referrer_sessions['Percentage'] = (referrer_sessions['Sessions'] / total_sessions * 100).round(2)
+                
+                st.dataframe(
+                    referrer_sessions,
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "Referrer": st.column_config.TextColumn("Referrer Source", width="large"),
+                        "Sessions": st.column_config.NumberColumn("Sessions", format="%d"),
+                        "Percentage": st.column_config.NumberColumn("Percentage", format="%.2f%%")
+                    }
+                )
+            else:
+                st.info("No referrer data available for the selected period.")
+        else:
+            st.info("No data available for the selected filters.")
+
 
                 # Also show as a table for better visibility
         #         st.markdown("**Referrer Breakdown Table:**")
