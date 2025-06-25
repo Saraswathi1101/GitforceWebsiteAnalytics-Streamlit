@@ -657,22 +657,66 @@ if not df.empty:
             # 1. Top 10 Users Table
             st.markdown("###  Top 10 Users")
 
-            # Calculate user metrics
-            user_metrics = filtered_df.groupby('Clarity user ID').agg({
+        # Calculate user metrics
+        user_metrics = filtered_df.groupby('Clarity user ID').agg({
+            'Country': 'first',
+            'Device': 'first',
+            'Referrer': 'first',
+            'Date': 'count',  # Sessions count
+            'Clicks': 'sum',  # Total clicks
+            'Page count': 'sum'  # Total page views
+        }).reset_index()
+
+        user_metrics.columns = ['Clarity User ID', 'Country', 'Device', 'Referrer', 'Sessions', 'Session Clicks',
+                                'Page Views']
+        user_metrics = user_metrics.sort_values('Sessions', ascending=False).head(10)
+
+        st.dataframe(
+            user_metrics,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Clarity User ID": st.column_config.TextColumn("Clarity User ID", width="medium"),
+                "Country": st.column_config.TextColumn("Country", width="small"),
+                "Device": st.column_config.TextColumn("Device", width="small"),
+                "Referrer": st.column_config.TextColumn("Referrer", width="medium"),
+                "Sessions": st.column_config.NumberColumn("Sessions", format="%d"),
+                "Session Clicks": st.column_config.NumberColumn("Session Clicks", format="%d"),
+                "Page Views": st.column_config.NumberColumn("Page Views", format="%d")
+            }
+        )
+
+        st.markdown("---")
+
+        # 2. New Users Table
+        st.markdown("### New Users")
+
+        # Find new users (first appearance in the filtered period)
+        first_seen_dates = df.groupby("Clarity user ID")["Date"].min().reset_index(name="first_seen")
+        new_users_in_period = first_seen_dates[
+            (first_seen_dates["first_seen"] >= pd.to_datetime(start_date)) &
+            (first_seen_dates["first_seen"] <= pd.to_datetime(end_date))
+            ]
+
+        # Get new users data from filtered dataframe
+        new_users_data = filtered_df[
+            filtered_df["Clarity user ID"].isin(new_users_in_period["Clarity user ID"])
+        ]
+
+        if len(new_users_data) > 0:
+            # Get latest visit date for each new user
+            new_user_metrics = new_users_data.groupby('Clarity user ID').agg({
                 'Country': 'first',
                 'Device': 'first',
                 'Referrer': 'first',
-                'Date': 'count',  # Sessions count
-                'Clicks': 'sum',  # Total clicks
-                'Page count': 'sum'  # Total page views
+                'Date': 'max'  # Latest date
             }).reset_index()
 
-            user_metrics.columns = ['Clarity User ID', 'Country', 'Device', 'Referrer', 'Sessions', 'Session Clicks',
-                                    'Page Views']
-            user_metrics = user_metrics.sort_values('Sessions', ascending=False).head(10)
+            new_user_metrics.columns = ['Clarity User ID', 'Country', 'Device', 'Referrer', 'Latest Visit Date']
+            new_user_metrics = new_user_metrics.sort_values('Latest Visit Date', ascending=False)
 
             st.dataframe(
-                user_metrics,
+                new_user_metrics,
                 use_container_width=True,
                 hide_index=True,
                 column_config={
@@ -680,84 +724,182 @@ if not df.empty:
                     "Country": st.column_config.TextColumn("Country", width="small"),
                     "Device": st.column_config.TextColumn("Device", width="small"),
                     "Referrer": st.column_config.TextColumn("Referrer", width="medium"),
-                    "Sessions": st.column_config.NumberColumn("Sessions", format="%d"),
-                    "Session Clicks": st.column_config.NumberColumn("Session Clicks", format="%d"),
-                    "Page Views": st.column_config.NumberColumn("Page Views", format="%d")
+                    "Latest Visit Date": st.column_config.DateColumn("Latest Visit Date")
                 }
             )
+        else:
+            st.info("No new users found in the selected period.")
 
-            st.markdown("---")
+        st.markdown("---")
 
-            # 2. New Users Table
-            st.markdown("### New Users")
+        # 3. Unique User Sessions Over Time
+        st.markdown("###  Unique User Sessions Over Time")
 
-            # Find new users (first appearance in the filtered period)
-            first_seen_dates = df.groupby("Clarity user ID")["Date"].min().reset_index(name="first_seen")
-            new_users_in_period = first_seen_dates[
-                (first_seen_dates["first_seen"] >= pd.to_datetime(start_date)) &
-                (first_seen_dates["first_seen"] <= pd.to_datetime(end_date))
-                ]
+        daily_sessions = filtered_df.groupby('Date').size().reset_index(name='Total Sessions')
 
-            # Get new users data from filtered dataframe
-            new_users_data = filtered_df[
-                filtered_df["Clarity user ID"].isin(new_users_in_period["Clarity user ID"])
-            ]
+        fig_time = px.line(
+            daily_sessions,
+            x='Date',
+            y='Total Sessions',
+            title='Daily Session Count',
+            markers=True
+        )
 
-            if len(new_users_data) > 0:
-                # Get latest visit date for each new user
-                new_user_metrics = new_users_data.groupby('Clarity user ID').agg({
-                    'Country': 'first',
-                    'Device': 'first',
-                    'Referrer': 'first',
-                    'Date': 'max'  # Latest date
-                }).reset_index()
+        fig_time.update_layout(
+            height=400,
+            xaxis_title="Date",
+            yaxis_title="Total Sessions",
+            hovermode='x unified'
+        )
 
-                new_user_metrics.columns = ['Clarity User ID', 'Country', 'Device', 'Referrer', 'Latest Visit Date']
-                new_user_metrics = new_user_metrics.sort_values('Latest Visit Date', ascending=False)
+        st.plotly_chart(fig_time, use_container_width=True)
 
-                st.dataframe(
-                    new_user_metrics,
-                    use_container_width=True,
-                    hide_index=True,
-                    column_config={
-                        "Clarity User ID": st.column_config.TextColumn("Clarity User ID", width="medium"),
-                        "Country": st.column_config.TextColumn("Country", width="small"),
-                        "Device": st.column_config.TextColumn("Device", width="small"),
-                        "Referrer": st.column_config.TextColumn("Referrer", width="medium"),
-                        "Latest Visit Date": st.column_config.DateColumn("Latest Visit Date")
-                    }
-                )
-            else:
-                st.info("No new users found in the selected period.")
+        st.markdown("---")
 
-            st.markdown("---")
+        # 4. Unique User Sessions Over Weekdays
+        st.markdown("### Unique User Sessions by Weekday")
 
-            # 3. Unique User Sessions Over Time
-            st.markdown("###  Unique User Sessions Over Time")
+        # Add weekday column
+        filtered_df_weekday = filtered_df.copy()
+        filtered_df_weekday['Weekday'] = filtered_df_weekday['Date'].dt.day_name()
 
-            daily_sessions = filtered_df.groupby('Date').size().reset_index(name='Total Sessions')
+        # Define weekday order
+        weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-            fig_time = px.line(
-                daily_sessions,
-                x='Date',
-                y='Total Sessions',
-                title='Daily Session Count',
-                markers=True
-            )
+        weekday_sessions = filtered_df_weekday.groupby('Weekday').size().reset_index(name='Total Sessions')
+        weekday_sessions['Weekday'] = pd.Categorical(weekday_sessions['Weekday'], categories=weekday_order,
+                                                     ordered=True)
+        weekday_sessions = weekday_sessions.sort_values('Weekday')
 
-            fig_time.update_layout(
-                height=400,
-                xaxis_title="Date",
-                yaxis_title="Total Sessions",
-                hovermode='x unified'
-            )
+        fig_weekday = px.line(
+            weekday_sessions,
+            x='Weekday',
+            y='Total Sessions',
+            title='Sessions by Weekday',
+            markers=True
+        )
 
-            st.plotly_chart(fig_time, use_container_width=True)
+        fig_weekday.update_layout(
+            height=400,
+            xaxis_title="Weekday",
+            yaxis_title="Total Sessions",
+            hovermode='x unified'
+        )
 
-            st.markdown("---")
+        st.plotly_chart(fig_weekday, use_container_width=True)
 
-            # 4. Unique User Sessions Over Weekdays
-            st.markdown("### Unique User Sessions by Weekday")
+    else:
+        st.info("No data available for the selected filters.")
+
+
+
+
+
+
+            
+            # st.markdown("###  Top 10 Users")
+
+            # # Calculate user metrics
+            # user_metrics = filtered_df.groupby('Clarity user ID').agg({
+            #     'Country': 'first',
+            #     'Device': 'first',
+            #     'Referrer': 'first',
+            #     'Date': 'count',  # Sessions count
+            #     'Clicks': 'sum',  # Total clicks
+            #     'Page count': 'sum'  # Total page views
+            # }).reset_index()
+
+            # user_metrics.columns = ['Clarity User ID', 'Country', 'Device', 'Referrer', 'Sessions', 'Session Clicks',
+            #                         'Page Views']
+            # user_metrics = user_metrics.sort_values('Sessions', ascending=False).head(10)
+
+            # st.dataframe(
+            #     user_metrics,
+            #     use_container_width=True,
+            #     hide_index=True,
+            #     column_config={
+            #         "Clarity User ID": st.column_config.TextColumn("Clarity User ID", width="medium"),
+            #         "Country": st.column_config.TextColumn("Country", width="small"),
+            #         "Device": st.column_config.TextColumn("Device", width="small"),
+            #         "Referrer": st.column_config.TextColumn("Referrer", width="medium"),
+            #         "Sessions": st.column_config.NumberColumn("Sessions", format="%d"),
+            #         "Session Clicks": st.column_config.NumberColumn("Session Clicks", format="%d"),
+            #         "Page Views": st.column_config.NumberColumn("Page Views", format="%d")
+            #     }
+            # )
+
+            # st.markdown("---")
+
+            # # 2. New Users Table
+            # st.markdown("### New Users")
+
+            # # Find new users (first appearance in the filtered period)
+            # first_seen_dates = df.groupby("Clarity user ID")["Date"].min().reset_index(name="first_seen")
+            # new_users_in_period = first_seen_dates[
+            #     (first_seen_dates["first_seen"] >= pd.to_datetime(start_date)) &
+            #     (first_seen_dates["first_seen"] <= pd.to_datetime(end_date))
+            #     ]
+
+            # # Get new users data from filtered dataframe
+            # new_users_data = filtered_df[
+            #     filtered_df["Clarity user ID"].isin(new_users_in_period["Clarity user ID"])
+            # ]
+
+            # if len(new_users_data) > 0:
+            #     # Get latest visit date for each new user
+            #     new_user_metrics = new_users_data.groupby('Clarity user ID').agg({
+            #         'Country': 'first',
+            #         'Device': 'first',
+            #         'Referrer': 'first',
+            #         'Date': 'max'  # Latest date
+            #     }).reset_index()
+
+            #     new_user_metrics.columns = ['Clarity User ID', 'Country', 'Device', 'Referrer', 'Latest Visit Date']
+            #     new_user_metrics = new_user_metrics.sort_values('Latest Visit Date', ascending=False)
+
+            #     st.dataframe(
+            #         new_user_metrics,
+            #         use_container_width=True,
+            #         hide_index=True,
+            #         column_config={
+            #             "Clarity User ID": st.column_config.TextColumn("Clarity User ID", width="medium"),
+            #             "Country": st.column_config.TextColumn("Country", width="small"),
+            #             "Device": st.column_config.TextColumn("Device", width="small"),
+            #             "Referrer": st.column_config.TextColumn("Referrer", width="medium"),
+            #             "Latest Visit Date": st.column_config.DateColumn("Latest Visit Date")
+            #         }
+            #     )
+            # else:
+            #     st.info("No new users found in the selected period.")
+
+            # st.markdown("---")
+
+            # # 3. Unique User Sessions Over Time
+            # st.markdown("###  Unique User Sessions Over Time")
+
+            # daily_sessions = filtered_df.groupby('Date').size().reset_index(name='Total Sessions')
+
+            # fig_time = px.line(
+            #     daily_sessions,
+            #     x='Date',
+            #     y='Total Sessions',
+            #     title='Daily Session Count',
+            #     markers=True
+            # )
+
+            # fig_time.update_layout(
+            #     height=400,
+            #     xaxis_title="Date",
+            #     yaxis_title="Total Sessions",
+            #     hovermode='x unified'
+            # )
+
+            # st.plotly_chart(fig_time, use_container_width=True)
+
+            # st.markdown("---")
+
+            # # 4. Unique User Sessions Over Weekdays
+            # st.markdown("### Unique User Sessions by Weekday")
 
             #
 
