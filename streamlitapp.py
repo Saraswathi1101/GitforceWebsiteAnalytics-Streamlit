@@ -529,20 +529,6 @@ if not df.empty:
         else:
             st.info("No data available for the selected filters.")
 
-        # # Debug section (you can remove this after troubleshooting)
-        # with st.expander("🔍 Debug: Referrer Data Analysis"):
-        #     if len(filtered_df) > 0:
-        #         st.write("**Total rows in filtered_df:**", len(filtered_df))
-        #         st.write("**Unique referrers in filtered data:**")
-        #         referrer_debug = filtered_df['Referrer'].value_counts()
-        #         st.write(referrer_debug)
-
-        #         st.write("**Sample of referrer data:**")
-        #         st.write(filtered_df[['Date', 'Referrer', 'Country']].head(10))
-
-        #         # Check if all referrers are being set to "Direct"
-        #         non_direct_count = len(filtered_df[filtered_df['Referrer'] != 'Direct'])
-        #         st.write(f"**Non-direct referrer sessions:** {non_direct_count}")
 
         # Row 3: Top Referrers (IMPROVED VERSION)
         st.markdown("### Top Referrers by Sessions")
@@ -597,44 +583,9 @@ if not df.empty:
 
                 st.plotly_chart(fig_referrers, use_container_width=True)
 
-        #         # Also show detailed table
-        #         st.markdown("**Detailed Referrer Breakdown:**")
-                
-        #         # Add percentage column for better insights
-        #         total_sessions = referrer_sessions['Sessions'].sum()
-        #         referrer_sessions['Percentage'] = (referrer_sessions['Sessions'] / total_sessions * 100).round(2)
-                
-        #         st.dataframe(
-        #             referrer_sessions,
-        #             use_container_width=True,
-        #             hide_index=True,
-        #             column_config={
-        #                 "Referrer": st.column_config.TextColumn("Referrer Source", width="large"),
-        #                 "Sessions": st.column_config.NumberColumn("Sessions", format="%d"),
-        #                 "Percentage": st.column_config.NumberColumn("Percentage", format="%.2f%%")
-        #             }
-        #         )
-        #     else:
-        #         st.info("No referrer data available for the selected period.")
-        # else:
-        #     st.info("No data available for the selected filters.")
 
 
-                # Also show as a table for better visibility
-        #         st.markdown("**Referrer Breakdown Table:**")
-        #         st.dataframe(
-        #             referrer_sessions,
-        #             use_container_width=True,
-        #             hide_index=True,
-        #             column_config={
-        #                 "Referrer": st.column_config.TextColumn("Referrer", width="large"),
-        #                 "Sessions": st.column_config.NumberColumn("Sessions", format="%d")
-        #             }
-        #         )
-        #     else:
-        #         st.info("No referrer data available.")
-        # else:
-        #     st.info("No data available for the selected filters.")
+
 
     # PAGE 2: USER INSIGHTS
     elif page == "User Insights":
@@ -663,7 +614,7 @@ if not df.empty:
             'Device': 'first',
             'Referrer': 'first',
             'Date': 'count',  # Sessions count
-            'Clicks': 'sum',  # Total clicks
+            'Session clicks': 'sum',  # Total clicks
             'Page count': 'sum'  # Total page views
         }).reset_index()
 
@@ -681,7 +632,7 @@ if not df.empty:
                 "Device": st.column_config.TextColumn("Device", width="small"),
                 "Referrer": st.column_config.TextColumn("Referrer", width="medium"),
                 "Sessions": st.column_config.NumberColumn("Sessions", format="%d"),
-                "Session Clicks": st.column_config.NumberColumn("Session Clicks", format="%d"),
+                "Session clicks": st.column_config.NumberColumn("Session clicks", format="%d"),
                 "Page Views": st.column_config.NumberColumn("Page Views", format="%d")
             }
         )
@@ -790,6 +741,40 @@ if not df.empty:
 
     else:
         st.info("No data available for the selected filters.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
