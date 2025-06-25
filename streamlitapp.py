@@ -597,27 +597,27 @@ if not df.empty:
 
                 st.plotly_chart(fig_referrers, use_container_width=True)
 
-                # Also show detailed table
-                st.markdown("**Detailed Referrer Breakdown:**")
+        #         # Also show detailed table
+        #         st.markdown("**Detailed Referrer Breakdown:**")
                 
-                # Add percentage column for better insights
-                total_sessions = referrer_sessions['Sessions'].sum()
-                referrer_sessions['Percentage'] = (referrer_sessions['Sessions'] / total_sessions * 100).round(2)
+        #         # Add percentage column for better insights
+        #         total_sessions = referrer_sessions['Sessions'].sum()
+        #         referrer_sessions['Percentage'] = (referrer_sessions['Sessions'] / total_sessions * 100).round(2)
                 
-                st.dataframe(
-                    referrer_sessions,
-                    use_container_width=True,
-                    hide_index=True,
-                    column_config={
-                        "Referrer": st.column_config.TextColumn("Referrer Source", width="large"),
-                        "Sessions": st.column_config.NumberColumn("Sessions", format="%d"),
-                        "Percentage": st.column_config.NumberColumn("Percentage", format="%.2f%%")
-                    }
-                )
-            else:
-                st.info("No referrer data available for the selected period.")
-        else:
-            st.info("No data available for the selected filters.")
+        #         st.dataframe(
+        #             referrer_sessions,
+        #             use_container_width=True,
+        #             hide_index=True,
+        #             column_config={
+        #                 "Referrer": st.column_config.TextColumn("Referrer Source", width="large"),
+        #                 "Sessions": st.column_config.NumberColumn("Sessions", format="%d"),
+        #                 "Percentage": st.column_config.NumberColumn("Percentage", format="%.2f%%")
+        #             }
+        #         )
+        #     else:
+        #         st.info("No referrer data available for the selected period.")
+        # else:
+        #     st.info("No data available for the selected filters.")
 
 
                 # Also show as a table for better visibility
