@@ -105,29 +105,29 @@ if not df.empty:
         def clean_referrer(referrer):
         """Clean and standardize referrer data"""
         # Convert to string first
-        referrer_str = str(referrer).strip()
+            referrer_str = str(referrer).strip()
         
         # Handle various representations of empty/null values
-        if (referrer_str in ['', 'nan', 'None', 'null', 'NaN'] or 
-            pd.isna(referrer) or 
-            referrer is None or 
-            referrer_str.lower() == 'none'):
-            return "Direct"
-        
-        # If it's a full URL, extract the domain
-        if referrer_str.startswith(('http://', 'https://')):
-            try:
-                parsed = urlparse(referrer_str)
-                domain = parsed.netloc.lower()
-                # Remove www. prefix for cleaner display
-                if domain.startswith('www.'):
-                    domain = domain[4:]
-                return domain if domain else "Direct"
-            except:
+            if (referrer_str in ['', 'nan', 'None', 'null', 'NaN'] or 
+                pd.isna(referrer) or 
+                referrer is None or 
+                referrer_str.lower() == 'none'):
                 return "Direct"
         
+        # If it's a full URL, extract the domain
+            if referrer_str.startswith(('http://', 'https://')):
+                try:
+                    parsed = urlparse(referrer_str)
+                    domain = parsed.netloc.lower()
+                # Remove www. prefix for cleaner display
+                    if domain.startswith('www.'):
+                        domain = domain[4:]
+                    return domain if domain else "Direct"
+                except:
+                    return "Direct"
+        
         # If it's already a clean domain or other referrer type, return as is
-        return referrer_str
+            return referrer_str
 
     # Apply the cleaning func
     if "Referrer" not in df.columns:
