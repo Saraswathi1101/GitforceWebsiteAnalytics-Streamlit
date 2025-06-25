@@ -523,20 +523,20 @@ if not df.empty:
         else:
             st.info("No data available for the selected filters.")
 
-        # Debug section (you can remove this after troubleshooting)
-        with st.expander("🔍 Debug: Referrer Data Analysis"):
-            if len(filtered_df) > 0:
-                st.write("**Total rows in filtered_df:**", len(filtered_df))
-                st.write("**Unique referrers in filtered data:**")
-                referrer_debug = filtered_df['Referrer'].value_counts()
-                st.write(referrer_debug)
+        # # Debug section (you can remove this after troubleshooting)
+        # with st.expander("🔍 Debug: Referrer Data Analysis"):
+        #     if len(filtered_df) > 0:
+        #         st.write("**Total rows in filtered_df:**", len(filtered_df))
+        #         st.write("**Unique referrers in filtered data:**")
+        #         referrer_debug = filtered_df['Referrer'].value_counts()
+        #         st.write(referrer_debug)
 
-                st.write("**Sample of referrer data:**")
-                st.write(filtered_df[['Date', 'Referrer', 'Country']].head(10))
+        #         st.write("**Sample of referrer data:**")
+        #         st.write(filtered_df[['Date', 'Referrer', 'Country']].head(10))
 
-                # Check if all referrers are being set to "Direct"
-                non_direct_count = len(filtered_df[filtered_df['Referrer'] != 'Direct'])
-                st.write(f"**Non-direct referrer sessions:** {non_direct_count}")
+        #         # Check if all referrers are being set to "Direct"
+        #         non_direct_count = len(filtered_df[filtered_df['Referrer'] != 'Direct'])
+        #         st.write(f"**Non-direct referrer sessions:** {non_direct_count}")
 
         # Row 3: Top Referrers (IMPROVED VERSION)
         st.markdown("### Top Referrers by Sessions")
